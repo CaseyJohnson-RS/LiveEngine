@@ -6,6 +6,13 @@ from engine.core.domain.value_objects.effects import Effect
 
 @dataclass(frozen=True)
 class PlayerState:
+    """Неизменяемый снимок состояния игрока, отдаваемый Player.state().
+
+    known_weight_indexes — индексы камор, чей вес раскрыт игроку предметами.
+    Актуальны только в пределах текущего раунда — теряют смысл и очищаются при
+    перезарядке ряда.
+    """
+
     health_points: int
     chips: int
     items: tuple[Item, ...]
