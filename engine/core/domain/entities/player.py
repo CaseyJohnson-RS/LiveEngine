@@ -18,23 +18,23 @@ class Player:
     исключается риск забыть обнулить какое-то поле при сбросе.
     """
 
-    def __init__(self, max_items: int):
-        """Создаёт игрока без здоровья — set_health_points обязателен перед использованием.
+    def __init__(self, max_items: int, health_points: int):
+        """Создаёт игрока."""
+        if health_points <= 0:
+            raise PlayerArgumentError(f"health_points must be > 0, got {health_points}")
+        # - - -
 
-        До вызова set_health_points health_points равен 0, что неотличимо
-        от мёртвого игрока (см. is_alive).
-        """
+        self._max_health_points: int = health_points
+        self._max_items = max_items
 
         # Party data
 
-        self._max_items = max_items
         self._items: list[Item] = []
         self._effects: list[Effect] = []
-        self._health_points: int = 0
+        self._health_points: int = health_points
 
         # Round data
 
-        self._max_health_points: int = 0
         self._chips: int = 0
         self._known_weight_indexes: list[int] = []
 
@@ -46,18 +46,6 @@ class Player:
     def is_alive(self) -> bool:
         return self._health_points > 0
 
-    def set_health_points(self, health_points: int) -> None:
-        """Задаёт стартовое здоровье — сразу и как текущее, и как потолок.
-
-        Оверхила нет: потолок равен ровно стартовому значению, лечение
-        выше него невозможно (см. adjust_health_points).
-        """
-        if health_points <= 0:
-            raise PlayerArgumentError(f"health_points must be > 0, got {health_points}")
-        # - - -
-        self._health_points = health_points
-        self._max_health_points = health_points
-
     def adjust_health_points(self, delta: int) -> None:
         """Меняет здоровье, зажимая результат в [0; max_health_points].
 
@@ -65,8 +53,8 @@ class Player:
         а не тихий no-op: цель должна была быть отсечена раньше, на уровне
         выбора цели, а не молча проигнорирована здесь.
         """
-        if self._health_points == 0 and delta < 0:
-            raise PlayerStateError("Player is already dead! delta can't be < 0!")
+        if self._health_points == 0:
+            raise PlayerStateError("Player is dead, you can't change health_points")
         # - - -
         self._health_points = max(
             0, min(self._health_points + delta, self._max_health_points)
@@ -127,6 +115,10 @@ class Player:
             )
         # - - -
         self._chips += delta
+
+    @property
+    def chips(self) -> int:
+        return self._chips
 
     def pop_chips(self) -> int:
         """Забирает все фишки игрока и обнуляет счётчик, возвращая забранное.
