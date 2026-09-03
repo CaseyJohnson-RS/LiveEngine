@@ -24,70 +24,27 @@ class Player:
         До вызова set_health_points health_points равен 0, что неотличимо
         от мёртвого игрока (см. is_alive).
         """
+
+        # Party data
+
         self._max_items = max_items
-        self._max_health_points: int = 0
-
-        self._health_points: int = 0
-        self._chips: int = 0
-
         self._items: list[Item] = []
         self._effects: list[Effect] = []
+        self._health_points: int = 0
+
+        # Round data
+
+        self._max_health_points: int = 0
+        self._chips: int = 0
         self._known_weight_indexes: list[int] = []
 
-    # Round living objects
-
-    # Chips
-
-    def adjust_chips(self, delta: int) -> None:
-        """Меняет число фишек. Бросает ошибку, если результат ушёл бы в минус."""
-        if self._chips + delta < 0:
-            raise PlayerArgumentError(
-                f"Chips must be non negative! Current chips {self._chips}, got delta {delta}"
-            )
-        # - - -
-        self._chips += delta
-
-    def pop_chips(self) -> int:
-        """Забирает все фишки игрока и обнуляет счётчик, возвращая забранное.
-
-        Используется в фазе раскладки фишек: пул на новый раунд равен
-        тому, что игрок накопил риском за предыдущий.
-        """
-        value, self._chips = self._chips, 0
-        return value
-
-    # Known weight indexes
-
-    def reveal_weight_index(self, index: int) -> None:
-        """Помечает индекс каморы как известный игроку.
-
-        Верхняя граница индекса не проверяется — размер ряда игроку не
-        принадлежит, это забота вызывающего кода. Повторное раскрытие уже
-        известного индекса — не ошибка, а no-op.
-        """
-        if index < 0:
-            raise PlayerArgumentError(f"Chamber index must be >= 0, got {index}")
-        if index in self._known_weight_indexes:
-            return
-        # - - -
-        self._known_weight_indexes.append(index)
-
-    def reveal_weight_indexes(self, indexes: Iterable[int]) -> None:
-        """Пакетная версия reveal_weight_index."""
-        for index in indexes:
-            self.reveal_weight_index(index)
-
-    def clear_weight_indexes(self) -> None:
-        """Сбрасывает раскрытую информацию о весах.
-
-        Вызывается при смене раунда: старые раскрытые индексы относятся к
-        уже перезаряженному ряду и больше ничего не значат.
-        """
-        self._known_weight_indexes.clear()
-
-    # Party living objects
+    # Functions for working with party data
 
     # Health
+
+    @property
+    def is_alive(self) -> bool:
+        return self._health_points > 0
 
     def set_health_points(self, health_points: int) -> None:
         """Задаёт стартовое здоровье — сразу и как текущее, и как потолок.
@@ -158,11 +115,58 @@ class Player:
         # - - -
         self._effects.remove(effect)
 
-    # Other
+    # Functions for working with round data
 
-    @property
-    def is_alive(self) -> bool:
-        return self._health_points > 0
+    # Chips
+
+    def adjust_chips(self, delta: int) -> None:
+        """Меняет число фишек. Бросает ошибку, если результат ушёл бы в минус."""
+        if self._chips + delta < 0:
+            raise PlayerArgumentError(
+                f"Chips must be non negative! Current chips {self._chips}, got delta {delta}"
+            )
+        # - - -
+        self._chips += delta
+
+    def pop_chips(self) -> int:
+        """Забирает все фишки игрока и обнуляет счётчик, возвращая забранное.
+
+        Используется в фазе раскладки фишек: пул на новый раунд равен
+        тому, что игрок накопил риском за предыдущий.
+        """
+        value, self._chips = self._chips, 0
+        return value
+
+    # Known weight indexes
+
+    def reveal_weight_index(self, index: int) -> None:
+        """Помечает индекс каморы как известный игроку.
+
+        Верхняя граница индекса не проверяется — размер ряда игроку не
+        принадлежит, это забота вызывающего кода. Повторное раскрытие уже
+        известного индекса — не ошибка, а no-op.
+        """
+        if index < 0:
+            raise PlayerArgumentError(f"Chamber index must be >= 0, got {index}")
+        if index in self._known_weight_indexes:
+            return
+        # - - -
+        self._known_weight_indexes.append(index)
+
+    def reveal_weight_indexes(self, indexes: Iterable[int]) -> None:
+        """Пакетная версия reveal_weight_index."""
+        for index in indexes:
+            self.reveal_weight_index(index)
+
+    def clear_weight_indexes(self) -> None:
+        """Сбрасывает раскрытую информацию о весах.
+
+        Вызывается при смене раунда: старые раскрытые индексы относятся к
+        уже перезаряженному ряду и больше ничего не значат.
+        """
+        self._known_weight_indexes.clear()
+
+    # - - -
 
     def state(self) -> PlayerState:
         """Возвращает неизменяемый снимок текущего состояния игрока."""
