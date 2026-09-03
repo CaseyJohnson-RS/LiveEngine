@@ -93,14 +93,6 @@ class ChamberRow:
                 f"cartridges must be in [0; {len(weights)}], got {cartridges}"
             )
 
-    def state(self) -> ChamberRowState:
-        """Возвращает неизменяемый снимок текущего состояния ряда."""
-        return ChamberRowState(
-            tuple(self._outcomes),
-            self._weights,
-            len(self.__get_chambers({ChamberState.LOADED})),
-        )
-
     def invert(self, position: int) -> None:
         """Переключает камору между EMPTY и LOADED.
 
@@ -191,3 +183,11 @@ class ChamberRow:
             self._outcomes[unspent_chambers[i]] = (
                 ChamberState.LOADED if loaded else ChamberState.EMPTY
             )
+
+    def state(self) -> ChamberRowState:
+        """Возвращает неизменяемый снимок текущего состояния ряда."""
+        return ChamberRowState(
+            tuple(self._outcomes),
+            self._weights,
+            len(self.__get_chambers({ChamberState.LOADED})),
+        )
