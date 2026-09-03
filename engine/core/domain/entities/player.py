@@ -1,9 +1,8 @@
 from collections.abc import Iterable, Sequence
 
-from engine.core.domain.enums.items import Item
+from engine.core.domain.enums import Item
 from engine.core.domain.exceptions.player import PlayerArgumentError, PlayerStateError
-from engine.core.domain.value_objects.effects import Effect
-from engine.core.domain.value_objects.player_state import PlayerState
+from engine.core.domain.value_objects import Effect, PlayerState
 
 
 class Player:
@@ -118,6 +117,7 @@ class Player:
 
     @property
     def chips(self) -> int:
+        """Возвращает количество имеющихся у игрока фишек"""
         return self._chips
 
     def pop_chips(self) -> int:

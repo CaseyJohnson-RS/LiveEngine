@@ -3,11 +3,11 @@ from random import Random
 
 from engine.core.domain.entities.chamber_row.chamber_row import ChamberRow
 from engine.core.domain.entities.player import Player
-from engine.core.domain.enums.chamber_state import ChamberState
+from engine.core.domain.enums import ChamberState
 from engine.core.domain.exceptions import InvariantViolationError
 from engine.core.domain.exceptions.party import PartyArgumentError, PartyStateError
 from engine.core.domain.ids import PlayerID
-from engine.core.domain.value_objects.party_state import PartyState
+from engine.core.domain.value_objects import PartyState
 
 
 class Party:
@@ -45,13 +45,13 @@ class Party:
     # Functions for working with party data
 
     def count_players_alive(self) -> int:
-        if (
-            alive_players := sum(
-                [int(player.is_alive) for player in self._players.values()]
-            )
-        ) == 0:
+        alive_players = sum([int(player.is_alive) for player in self._players.values()])
+
+        # - - -
+        if alive_players == 0:
             raise InvariantViolationError("Impossible party state: 0 alive players")
         # - - -
+
         return alive_players
 
     def is_party_over(self) -> bool:

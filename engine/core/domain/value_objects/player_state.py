@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
-from engine.core.domain.enums.items import Item
-from engine.core.domain.value_objects.effects import Effect
+from engine.core.domain.enums import Item
+from engine.core.domain.value_objects import Effect
 
 
 @dataclass(frozen=True)

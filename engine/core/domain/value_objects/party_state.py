@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
-from engine.core.domain.enums.chamber_state import ChamberState
+from engine.core.domain.enums import ChamberState
 from engine.core.domain.ids import PlayerID
-from engine.core.domain.value_objects.player_state import PlayerState
+from engine.core.domain.value_objects import PlayerState
 
 
 @dataclass(frozen=True)

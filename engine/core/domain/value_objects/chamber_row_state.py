@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from engine.core.domain.enums.chamber_state import ChamberState
+from engine.core.domain.enums import ChamberState
 
 
 @dataclass(frozen=True)
