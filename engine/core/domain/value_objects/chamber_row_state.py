@@ -7,9 +7,9 @@ from engine.core.domain.enums import ChamberState
 class ChamberRowState:
     """Неизменяемый снимок каморного ряда в конкретный момент времени.
 
-    outcomes           — состояние каждой каморы по порядку.
-    weights            — веса камор, заданные при создании ряда.
-    remain_cartridges  — сколько камор сейчас заряжено (LOADED).
+    - `outcomes`           — состояние каждой каморы по порядку.
+    - `weights`            — веса камор, заданные при создании ряда.
+    - `remain_cartridges`  — сколько камор сейчас заряжено (`LOADED`).
     """
 
     outcomes: tuple[ChamberState, ...]
