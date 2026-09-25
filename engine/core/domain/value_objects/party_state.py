@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from engine.core.domain.enums import ChamberState
-from engine.core.domain.ids import PlayerID
+from engine.core.domain.ids import ClientID
 from engine.core.domain.value_objects import PlayerState
 
 
@@ -21,8 +21,8 @@ class PartyState:
 
     # Party data
 
-    player_states: dict[PlayerID, PlayerState]
-    turn_order: list[PlayerID]
+    player_states: dict[ClientID, PlayerState]
+    turn_order: list[ClientID]
     active_player_index: int
     move_number: int
 

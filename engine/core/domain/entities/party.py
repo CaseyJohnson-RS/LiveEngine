@@ -6,14 +6,14 @@ from engine.core.domain.entities.player import Player
 from engine.core.domain.enums import ChamberState
 from engine.core.domain.exceptions import InvariantViolationError
 from engine.core.domain.exceptions.party import PartyArgumentError, PartyStateError
-from engine.core.domain.ids import PlayerID
+from engine.core.domain.ids import ClientID
 from engine.core.domain.value_objects import PartyState
 
 
 class Party:
     def __init__(
         self,
-        player_ids: Sequence[PlayerID],
+        player_ids: Sequence[ClientID],
         max_items: int,
         health_points: int,
         rng: Random | None = None,
@@ -33,7 +33,7 @@ class Party:
         self._players = {
             player_id: Player(max_items, health_points) for player_id in player_ids
         }
-        self._turn_order: list[PlayerID] = self._rng.sample(player_ids, len(player_ids))
+        self._turn_order: list[ClientID] = self._rng.sample(player_ids, len(player_ids))
         self._active_player_index: int = 0
         self._move_number: int = 0
 
@@ -57,7 +57,7 @@ class Party:
     def is_party_over(self) -> bool:
         return self.count_players_alive() == 1
 
-    def get_player(self, player_id: PlayerID) -> Player:
+    def get_player(self, player_id: ClientID) -> Player:
         if player_id not in self._players:
             raise PartyArgumentError(f"There's no player with id {player_id}")
         # - - -

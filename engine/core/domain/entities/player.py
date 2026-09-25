@@ -23,6 +23,8 @@ class Player:
             raise PlayerArgumentError(f"health_points must be > 0, got {health_points}")
         # - - -
 
+        # Party consts
+
         self._max_health_points: int = health_points
         self._max_items = max_items
 

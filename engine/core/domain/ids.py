@@ -1,6 +1,6 @@
 """Идентификаторы доменных сущностей.
 
-PlayerID заведён через NewType, а не голый int: во время выполнения это
+ClientID заведён через NewType, а не голый int: во время выполнения это
 ровно int без каких-либо накладных расходов, но Pylance/Pyright ловит
 попытку передать произвольный int (например, индекс каморы) туда, где
 ожидается именно идентификатор игрока.
@@ -8,4 +8,4 @@ PlayerID заведён через NewType, а не голый int: во вре�
 
 from typing import NewType
 
-PlayerID = NewType("PlayerID", int)
+ClientID = NewType("ClientID", int)
