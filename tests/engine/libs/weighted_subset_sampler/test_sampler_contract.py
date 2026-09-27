@@ -5,7 +5,10 @@ from random import Random
 
 import pytest
 
-from libs.weighted_subset_sampler import sample_weighted_mask, sample_weighted_subset
+from engine.libs.weighted_subset_sampler import (
+    sample_weighted_mask,
+    sample_weighted_subset,
+)
 
 WEIGHTS_CASES = [
     [1.0],
@@ -56,12 +59,14 @@ def test_subset_has_exactly_k_strictly_increasing_indices(
 
 
 @pytest.mark.parametrize(("weights", "k"), ALL_CASES)
-def test_subset_is_deterministic_for_same_seed(weights: list[float], k: int) -> None:
+def test_subset_is_deterministic_for_same_seed(
+    weights: list[float], k: int
+) -> None:
     rng_a, rng_b = Random(123), Random(123)
     for _ in range(20):
-        assert sample_weighted_subset(weights, k, rng_a) == sample_weighted_subset(
-            weights, k, rng_b
-        )
+        assert sample_weighted_subset(
+            weights, k, rng_a
+        ) == sample_weighted_subset(weights, k, rng_b)
 
 
 def test_k_zero_returns_empty_and_does_not_touch_rng() -> None:
@@ -82,9 +87,9 @@ def test_k_equals_n_returns_everything_and_does_not_touch_rng() -> None:
 
 def test_accepts_any_sequence() -> None:
     weights = (1, 2, 3, 4)
-    assert sample_weighted_subset(weights, 2, Random(0)) == sample_weighted_subset(
-        list(map(float, weights)), 2, Random(0)
-    )
+    assert sample_weighted_subset(
+        weights, 2, Random(0)
+    ) == sample_weighted_subset(list(map(float, weights)), 2, Random(0))
 
 
 def test_does_not_mutate_input() -> None:
@@ -96,9 +101,9 @@ def test_does_not_mutate_input() -> None:
 @pytest.mark.parametrize("k", [1, 2, 3])
 def test_rng_always_zero_takes_first_k(k: int) -> None:
     """random() == 0 → каждая позиция включается, пока не наберётся k."""
-    assert sample_weighted_subset([5.0, 1.0, 3.0, 2.0], k, FixedRandom(0.0)) == list(
-        range(k)
-    )
+    assert sample_weighted_subset(
+        [5.0, 1.0, 3.0, 2.0], k, FixedRandom(0.0)
+    ) == list(range(k))
 
 
 @pytest.mark.parametrize("k", [1, 2, 3])
@@ -106,7 +111,9 @@ def test_rng_almost_one_takes_last_k(k: int) -> None:
     """random() → 1 → ни один розыгрыш не выигрывается, добор идёт с хвоста."""
     rng = FixedRandom(1.0 - 2**-53)
     n = 4
-    assert sample_weighted_subset([5.0, 1.0, 3.0, 2.0], k, rng) == list(range(n - k, n))
+    assert sample_weighted_subset([5.0, 1.0, 3.0, 2.0], k, rng) == list(
+        range(n - k, n)
+    )
 
 
 @pytest.mark.parametrize("power", [-10, -1, 1, 3, 10])
@@ -122,14 +129,14 @@ def test_scaling_by_power_of_two_gives_identical_result(power: int) -> None:
     rng_a, rng_b = Random(99), Random(99)
 
     for _ in range(200):
-        assert sample_weighted_subset(weights, 3, rng_a) == sample_weighted_subset(
-            scaled, 3, rng_b
-        )
+        assert sample_weighted_subset(
+            weights, 3, rng_a
+        ) == sample_weighted_subset(scaled, 3, rng_b)
 
 
 def test_extreme_weight_ratio_is_stable() -> None:
     """Крайние допустимые веса в одном наборе: без переполнения и NaN."""
-    from libs.weighted_subset_sampler._limits import MAX_WEIGHT
+    from engine.libs.weighted_subset_sampler._limits import MAX_WEIGHT
 
     heavy, light = float(MAX_WEIGHT), 1 / MAX_WEIGHT
     rng = Random(0)
@@ -138,9 +145,11 @@ def test_extreme_weight_ratio_is_stable() -> None:
 
 
 def test_max_size_input_runs() -> None:
-    from libs.weighted_subset_sampler._limits import MAX_SIZE, MAX_WEIGHT
+    from engine.libs.weighted_subset_sampler._limits import MAX_SIZE, MAX_WEIGHT
 
-    weights = [float(MAX_WEIGHT) if i % 2 else 1 / MAX_WEIGHT for i in range(MAX_SIZE)]
+    weights = [
+        float(MAX_WEIGHT) if i % 2 else 1 / MAX_WEIGHT for i in range(MAX_SIZE)
+    ]
     chosen = sample_weighted_subset(weights, MAX_SIZE // 2, Random(0))
 
     assert len(chosen) == MAX_SIZE // 2

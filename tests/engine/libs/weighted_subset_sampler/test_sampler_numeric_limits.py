@@ -11,8 +11,8 @@ from random import Random
 
 import pytest
 
-from libs.weighted_subset_sampler._limits import MAX_SIZE, MAX_WEIGHT
-from libs.weighted_subset_sampler.sampler import _InclusionOdds  # type: ignore
+from engine.libs.weighted_subset_sampler._limits import MAX_SIZE, MAX_WEIGHT
+from engine.libs.weighted_subset_sampler.sampler import _InclusionOdds  # type: ignore
 
 
 def extreme_patterns(n: int, heavy: float) -> dict[str, list[float]]:
@@ -20,8 +20,12 @@ def extreme_patterns(n: int, heavy: float) -> dict[str, list[float]]:
     light = 1 / heavy
     rng = Random(0)
     return {
-        "alternating-light-first": [heavy if i % 2 else light for i in range(n)],
-        "alternating-heavy-first": [light if i % 2 else heavy for i in range(n)],
+        "alternating-light-first": [
+            heavy if i % 2 else light for i in range(n)
+        ],
+        "alternating-heavy-first": [
+            light if i % 2 else heavy for i in range(n)
+        ],
         "heavy-head": [heavy] * (n - n // 2) + [light] * (n // 2),
         "heavy-tail": [light] * (n // 2) + [heavy] * (n - n // 2),
         "all-heavy": [heavy] * n,

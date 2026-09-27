@@ -18,7 +18,9 @@ def validated_weights(weights: Sequence[float]) -> list[float]:
     if n == 0:
         raise SamplingSizeError("weights must not be empty")
     if n > MAX_SIZE:
-        raise SamplingSizeError(f"number of weights must be <= {MAX_SIZE}, got {n}")
+        raise SamplingSizeError(
+            f"number of weights must be <= {MAX_SIZE}, got {n}"
+        )
 
     checked: list[float] = []
     for i, w in enumerate(weights):

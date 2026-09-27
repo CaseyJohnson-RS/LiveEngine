@@ -17,7 +17,7 @@ from random import Random
 
 import pytest
 
-from libs.weighted_subset_sampler import sample_weighted_subset
+from engine.libs.weighted_subset_sampler import sample_weighted_subset
 
 TRIALS = 60_000
 SIGMAS = 5.0
@@ -67,7 +67,9 @@ def test_subset_frequencies_match_exact_distribution(
 
 
 @pytest.mark.parametrize(("weights", "k"), CASES.values(), ids=CASES.keys())
-def test_inclusion_frequencies_match_exact(weights: list[float], k: int) -> None:
+def test_inclusion_frequencies_match_exact(
+    weights: list[float], k: int
+) -> None:
     exact = exact_subset_probabilities(weights, k)
     inclusion = [
         sum(p for subset, p in exact.items() if i in subset)
@@ -75,7 +77,9 @@ def test_inclusion_frequencies_match_exact(weights: list[float], k: int) -> None
     ]
     rng = Random(42)
     counts = Counter(
-        i for _ in range(TRIALS) for i in sample_weighted_subset(weights, k, rng)
+        i
+        for _ in range(TRIALS)
+        for i in sample_weighted_subset(weights, k, rng)
     )
 
     for i, p in enumerate(inclusion):
@@ -91,7 +95,9 @@ def test_k1_reduces_to_proportional_choice() -> None:
     weights = [1.0, 2.0, 3.0, 4.0]
     total = sum(weights)
     rng = Random(1)
-    counts = Counter(sample_weighted_subset(weights, 1, rng)[0] for _ in range(TRIALS))
+    counts = Counter(
+        sample_weighted_subset(weights, 1, rng)[0] for _ in range(TRIALS)
+    )
 
     for i, w in enumerate(weights):
         assert _within_tolerance(counts[i], w / total, TRIALS)

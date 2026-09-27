@@ -6,18 +6,23 @@ from random import Random
 
 import pytest
 
-from libs.weighted_subset_sampler import sample_weighted_mask, sample_weighted_subset
-from libs.weighted_subset_sampler._exceptions import (
+from engine.libs.weighted_subset_sampler import (
+    sample_weighted_mask,
+    sample_weighted_subset,
+)
+from engine.libs.weighted_subset_sampler._exceptions import (
     SamplingError,
     SamplingSizeError,
     SamplingSubsetSizeError,
     SamplingWeightError,
 )
-from libs.weighted_subset_sampler._limits import MAX_SIZE, MAX_WEIGHT
+from engine.libs.weighted_subset_sampler._limits import MAX_SIZE, MAX_WEIGHT
 
 Sampler = Callable[..., object]
 SAMPLERS = pytest.mark.parametrize(
-    "sample", [sample_weighted_subset, sample_weighted_mask], ids=["subset", "mask"]
+    "sample",
+    [sample_weighted_subset, sample_weighted_mask],
+    ids=["subset", "mask"],
 )
 
 MIN_WEIGHT = 1 / MAX_WEIGHT

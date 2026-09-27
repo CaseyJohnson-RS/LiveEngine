@@ -1,7 +1,7 @@
 [project]
 name = "liveengine"
 version = "0.1.0"
-description = "Add your description here"
+description = "Engine of my little game Live"
 readme = "README.md"
 requires-python = ">=3.15"
 dependencies = []
@@ -9,4 +9,13 @@ dependencies = []
 [dependency-groups]
 dev = [
     "pytest>=9.1.1",
+    "ruff>=0.16.9",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = ["--import-mode=importlib"]
+
+[tool.ruff]
+line-length = 80
