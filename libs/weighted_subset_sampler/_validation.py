@@ -1,11 +1,11 @@
 from collections.abc import Sequence
 
-from ._limits import MAX_SIZE, MAX_WEIGHT
-from .exceptions import (
+from ._exceptions import (
     SamplingSizeError,
     SamplingSubsetSizeError,
     SamplingWeightError,
 )
+from ._limits import MAX_SIZE, MAX_WEIGHT
 
 
 def validated_weights(weights: Sequence[float]) -> list[float]:

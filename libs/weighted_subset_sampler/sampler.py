@@ -1,6 +1,6 @@
 """Conditional Poisson sampling (модель Фишера).
 
-Доменные правила модуля:
+Контракт модуля:
   * каждый вес лежит в [1/MAX_WEIGHT; MAX_WEIGHT]
   * число весов n лежит в [1; MAX_SIZE]
   * размер выборки k лежит в [0; n] и тем самым тоже не превосходит MAX_SIZE.
@@ -9,7 +9,7 @@
 import random
 from collections.abc import Sequence
 
-from .validation import (
+from ._validation import (
     validated_k,
     validated_weights,
 )
@@ -40,13 +40,15 @@ class _InclusionOdds:
 
         for i in range(n - 1, -1, -1):
             cur, nxt, w = rows[i], rows[i + 1], weights[i]
-            cur[0] = 1.0
+            cur[0] = nxt[0]
             for j in range(1, degree + 1):
                 cur[j] = nxt[j] + w * nxt[j - 1]
 
-            # cur[0] == 1.0, поэтому scale >= 1.0 всегда: проверка scale > 0
-            # была бы недостижимой. Нормировка держит все промежуточные
-            # значения в [0; 1 + MAX_WEIGHT], то есть переполнение невозможно.
+            # Строка nxt нормирована, поэтому её максимум равен 1, а
+            # cur[j] >= nxt[j] для любого j. Значит, scale >= 1.0 всегда:
+            # проверка scale > 0 была бы недостижимой. Нормировка держит все
+            # промежуточные значения в [0; 1 + MAX_WEIGHT], то есть
+            # переполнение невозможно.
             scale = max(cur)
             if scale != 1.0:
                 for j in range(degree + 1):
@@ -63,11 +65,12 @@ class _InclusionOdds:
         их отношение корректно.
 
         Предусловия (обеспечены вызывающим `_sample`): 1 <= rest <= degree и
-        rest < n - i. При них den > 0 строго:
-          * rest - 1 <= n - i - 2, значит e_{rest-1}(weights[i+1:]) не равен
-            нулю структурно;
-          * при границах минимальное нормированное значение строки
-            до нуля не додавливается;
+        rest < n - i. При них num > 0 и den > 0 строго:
+          * в weights[i+1:] ровно n - i - 1 позиций, а rest <= n - i - 1,
+            поэтому e_{rest-1} и e_{rest} от хвоста структурно не равны нулю;
+          * при соблюдении связи границ из `_limits`
+            (`(1 + MAX_WEIGHT) ** MAX_SIZE <= 1e300`) нормировка не
+            обнуляет их численно;
           * weights[i] >= 1 / MAX_WEIGHT > 0.
         Поэтому ветки «den == 0» здесь нет.
         """
