@@ -12,7 +12,9 @@ from random import Random
 import pytest
 
 from engine.libs.weighted_subset_sampler._limits import MAX_SIZE, MAX_WEIGHT
-from engine.libs.weighted_subset_sampler.sampler import _InclusionOdds  # type: ignore
+from engine.libs.weighted_subset_sampler.sampler import (
+    _InclusionOdds,  # type: ignore
+)
 
 
 def extreme_patterns(n: int, heavy: float) -> dict[str, list[float]]:
