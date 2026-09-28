@@ -1,193 +1,202 @@
-from collections.abc import Sequence, Set  # noqa: PYI025
+from collections.abc import Sequence
 from random import Random
 
+from engine.core.domain.entities.chamber_row._limits import (
+    MAX_SIZE,
+    MAX_WEIGHT,
+)
 from engine.core.domain.enums import ChamberState
-from engine.core.domain.exceptions.chamber_row import ChamberRowError, ChamberStateError
+from engine.core.domain.exceptions.chamber_row import (
+    ChamberPositionError,
+    ChamberSpentError,
+    ChamberUnavailableError,
+)
 from engine.core.domain.value_objects import ChamberRowState
-from engine.core.math.weighted_subset_sampler import (
+from engine.libs.weighted_subset_sampler import (
     sample_weighted_mask,
     sample_weighted_subset,
 )
 
-from ._limits import (
-    MAX_SIZE,
-    MAX_WEIGHT,
-)
-
-_UNSPENT: frozenset[ChamberState] = frozenset({ChamberState.EMPTY, ChamberState.LOADED})
-
 
 class ChamberRow:
-    """Каморный ряд — барабан с явно видимыми и выбираемыми каморами.
+    """Каморный ряд — выложенные в ряд каморы, каждую можно выбрать.
 
-    В отличие от классической рулетки, порядок камор не скрыт от игрока:
-    можно целиться в конкретную позицию. Ряд отвечает за то, чтобы при
-    этом вероятностные операции (`shake`, `add_cartridge`,
-    `remove_cartridge`) сохраняли заданные веса камор, а не сводились
-    к равновероятному выбору.
+    Порядок камор открыт: игрок сам выбирает, какую камору использовать.
+    Скрыто только содержимое. Ряд отвечает за то, чтобы случайные операции
+    (`shake`, `add_cartridge`, `remove_cartridge`) учитывали веса камор,
+    а не сводились к равновероятному выбору.
+
+    Отстрелянная камора (SPENT) выбывает навсегда: её нельзя ни
+    инвертировать, ни потратить повторно, ни зарядить перемешиванием.
+
+    Ошибки:
+    - `ValueError` — неверные параметры создания. Их вычисляет движок,
+      а не клиент, поэтому это баг, а не отклонённое действие.
+    - наследники `ChamberRowError` — недопустимое действие над рядом,
+      как правило, из-за выбора игрока.
     """
 
     def __init__(
-        self, weights: Sequence[int], cartridges: int, rng: Random | None = None
+        self, weights: Sequence[int], cartridges: int, rng: Random
     ) -> None:
-        """Создаёт ряд заданной длины и сразу расставляет патроны.
+        """Создаёт ряд и сразу расставляет патроны по весам.
 
-        weights     — вес каждой каморы; чем больше вес, тем выше шанс
-                      получить патрон при расстановке.
-        cartridges  — сколько патронов расставить по ряду.
-        rng         — источник случайности; по умолчанию создаётся новый.
+        weights     — вес каждой каморы в [1; MAX_WEIGHT]; чем больше
+                      вес, тем выше шанс получить патрон.
+        cartridges  — сколько патронов расставить, в [0; len(weights)].
+        rng         — источник случайности для начальной расстановки.
         """
         self.__check_weights_cartridges(weights, cartridges)
         # - - -
 
-        self._rng = rng or Random()
-
         self._weights: tuple[int, ...] = tuple(weights)
         self._outcomes: list[ChamberState] = [
             ChamberState.LOADED if loaded else ChamberState.EMPTY
-            for loaded in sample_weighted_mask(weights, cartridges, self._rng)
+            for loaded in sample_weighted_mask(self._weights, cartridges, rng)
         ]
 
-    def __get_chambers(self, states: Set[ChamberState]) -> list[int]:
-        """Индексы камор, чьё состояние входит в `states`."""
-        return [i for i, v in enumerate(self._outcomes) if v in states]
-
-    def __check_position(self, position: int) -> None:
-        """Бросает ValueError, если позиции нет в ряду."""
-        if not (0 <= position < len(self._weights)):
-            raise ValueError(
-                f"Position must be in range [0; {len(self._weights)}), got {position}"
-            )
-
-    def __check_chamber_state(
-        self, state: ChamberState, permitted_states: Set[ChamberState]
-    ) -> None:
-        """Бросает ChamberStateError, если состояние не входит в допустимые."""
-        if state not in permitted_states:
-            raise ChamberStateError(
-                f"Chamber state must be in {sorted([i.name for i in permitted_states])}, got {state.name}"
-            )
+    # Проверки
 
     @staticmethod
-    def __check_weights_cartridges(weights: Sequence[int], cartridges: int) -> None:
-        """Проверяет доменные ограничения на веса и число патронов.
-
-        Веса не должны быть пустыми, их количество и значения — не
-        превышать `MAX_SIZE`/`MAX_WEIGHT`, а число патронов — умещаться
-        в диапазон [0; число камор].
-        """
-        if not weights:
-            raise ValueError("weights must not be empty")
-        if len(weights) > MAX_SIZE:
+    def __check_weights_cartridges(
+        weights: Sequence[int], cartridges: int
+    ) -> None:
+        """Проверяет параметры создания; бросает ValueError (не доменную)."""
+        if not (1 <= len(weights) <= MAX_SIZE):
             raise ValueError(
-                f"Chamber row length must be in range [1; {MAX_SIZE}], got {len(weights)}"
+                f"row length must be in [1; {MAX_SIZE}], got {len(weights)}"
             )
         for i, w in enumerate(weights):
             if not (1 <= w <= MAX_WEIGHT):
                 raise ValueError(
-                    f"weight at {i} must be in range [1; {MAX_WEIGHT}], got {w}"
+                    f"weight at {i} must be in [1; {MAX_WEIGHT}], got {w}"
                 )
-
         if not (0 <= cartridges <= len(weights)):
             raise ValueError(
                 f"cartridges must be in [0; {len(weights)}], got {cartridges}"
             )
 
-    def invert(self, position: int) -> None:
-        """Переключает камору между EMPTY и LOADED.
+    def __check_unspent(self, position: int) -> None:
+        """Проверяет, что позиция есть в ряду и камора не отстреляна."""
+        if not (0 <= position < self.size):
+            raise ChamberPositionError(
+                f"position must be in [0; {self.size}), got {position}"
+            )
+        if self._outcomes[position] is ChamberState.SPENT:
+            raise ChamberSpentError(f"chamber {position} is already spent")
 
-        Допустимо только для ещё не отстрелянной каморы: SPENT необратима
-        и приведёт к ChamberStateError.
+    # Выборки
+
+    def __chambers(self, *states: ChamberState) -> list[int]:
+        """Индексы камор, чьё состояние входит в `states`."""
+        return [i for i, s in enumerate(self._outcomes) if s in states]
+
+    @staticmethod
+    def __pick_one(
+        chambers: list[int], weights: list[float], rng: Random
+    ) -> int:
+        """Выбирает одну камору из `chambers` пропорционально `weights`."""
+        return chambers[sample_weighted_subset(weights, 1, rng)[0]]
+
+    # Вопросы о ряде
+
+    @property
+    def size(self) -> int:
+        """Число камор в ряду, включая отстрелянные."""
+        return len(self._weights)
+
+    @property
+    def is_exhausted(self) -> bool:
+        """Отстреляны ли все каморы."""
+        return all(s is ChamberState.SPENT for s in self._outcomes)
+
+    # Действия над конкретной каморой
+
+    def spend(self, position: int) -> bool:
+        """Тратит камору и возвращает, был ли в ней патрон.
+
+        Камора переходит в SPENT. Используется и для выстрела, и для
+        предметов, которые тратят камору без выстрела.
         """
-        self.__check_position(position)
-        self.__check_chamber_state(self._outcomes[position], _UNSPENT)
+        self.__check_unspent(position)
         # - - -
+        loaded = self._outcomes[position] is ChamberState.LOADED
+        self._outcomes[position] = ChamberState.SPENT
+        return loaded
 
+    def invert(self, position: int) -> None:
+        """Меняет содержимое каморы: EMPTY ↔ LOADED."""
+        self.__check_unspent(position)
+        # - - -
         self._outcomes[position] = (
             ChamberState.EMPTY
             if self._outcomes[position] is ChamberState.LOADED
             else ChamberState.LOADED
         )
 
-    def use(self, position: int) -> bool:
-        """Стреляет по каморе: переводит её в SPENT и возвращает, был ли патрон.
+    # Случайные действия над рядом
 
-        Как и `invert`, применим только к ещё не отстрелянной каморе.
+    def add_cartridge(self, rng: Random) -> None:
+        """Заряжает одну пустую камору, выбранную пропорционально весу.
+
+        Бросает ChamberUnavailableError, если пустых камор нет.
         """
-        self.__check_position(position)
-        self.__check_chamber_state(self._outcomes[position], _UNSPENT)
+        empty = self.__chambers(ChamberState.EMPTY)
+        if not empty:
+            raise ChamberUnavailableError("no empty chamber to load")
         # - - -
+        chosen = self.__pick_one(
+            empty, [float(self._weights[i]) for i in empty], rng
+        )
+        self._outcomes[chosen] = ChamberState.LOADED
 
-        state = self._outcomes[position]
-        self._outcomes[position] = ChamberState.SPENT
+    def remove_cartridge(self, rng: Random) -> None:
+        """Разряжает одну заряженную камору, выбранную обратно весу.
 
-        return state is ChamberState.LOADED
+        Чем тяжелее камора, тем ниже шанс, что патрон уберут именно из
+        неё. Так распределение остающегося набора патронов согласовано
+        с `add_cartridge` и начальной расстановкой: вероятность набора
+        пропорциональна произведению весов его камор.
 
-    def add_cartridge(self) -> None:
-        """Добавляет патрон в случайную свободную камору.
-
-        Камора выбирается пропорционально своему весу — чем тяжелее
-        камора, тем выше шанс, что патрон достанется именно ей.
-        Бросает ChamberRowError, если свободных камор не осталось.
+        Бросает ChamberUnavailableError, если заряженных камор нет.
         """
-        empty_chambers = self.__get_chambers({ChamberState.EMPTY})
-
+        loaded = self.__chambers(ChamberState.LOADED)
+        if not loaded:
+            raise ChamberUnavailableError("no loaded chamber to unload")
         # - - -
-        if not empty_chambers:
-            raise ChamberRowError("There's no place for cartridge!")
-        # - - -
+        chosen = self.__pick_one(
+            loaded, [1 / self._weights[i] for i in loaded], rng
+        )
+        self._outcomes[chosen] = ChamberState.EMPTY
 
-        subweights = [self._weights[i] for i in empty_chambers]
+    def shake(self, rng: Random) -> None:
+        """Заново расставляет патроны по неотстрелянным каморам.
 
-        self._outcomes[
-            empty_chambers[sample_weighted_subset(subweights, 1, self._rng)[0]]
-        ] = ChamberState.LOADED
+        Число патронов сохраняется, веса учитываются так же, как при
+        создании ряда. Отстрелянные каморы не участвуют.
 
-    def remove_cartridge(self) -> None:
-        """Убирает патрон из случайной заряженной каморы.
-
-        Вес каморы учитывается в обратной пропорции: чем тяжелее камора,
-        тем ниже шанс, что патрон уберут именно из неё (симметрично
-        `add_cartridge`). Бросает ChamberRowError, если заряженных камор нет.
+        Бросает ChamberUnavailableError, если неотстрелянных камор нет.
+        Если перемешивать нечего (все неотстрелянные пусты или все заряжены),
+        ряд не меняется.
         """
-        loaded_chambers = self.__get_chambers({ChamberState.LOADED})
-
+        unspent = self.__chambers(ChamberState.EMPTY, ChamberState.LOADED)
+        if not unspent:
+            raise ChamberUnavailableError("no unspent chamber to shake")
         # - - -
-        if not loaded_chambers:
-            raise ChamberRowError("There's no cartridges to remove!")
-        # - - -
-
-        subweights = [1 / self._weights[i] for i in loaded_chambers]
-
-        self._outcomes[
-            loaded_chambers[sample_weighted_subset(subweights, 1, self._rng)[0]]
-        ] = ChamberState.EMPTY
-
-    def shake(self) -> None:
-        """Перемешивает ряд: заново расставляет патроны по неотстрелянным каморам.
-
-        Число заряженных камор сохраняется; SPENT-каморы не участвуют
-        и не могут стать заряженными.
-        """
-        loaded_chambers = self.__get_chambers({ChamberState.LOADED})
-        unspent_chambers = self.__get_chambers(_UNSPENT)
-
-        if len(unspent_chambers) == 0:
-            return
-
-        subweights = [self._weights[i] for i in unspent_chambers]
-
-        for i, loaded in enumerate(
-            sample_weighted_mask(subweights, len(loaded_chambers), self._rng)
-        ):
-            self._outcomes[unspent_chambers[i]] = (
+        cartridges = sum(
+            self._outcomes[i] is ChamberState.LOADED for i in unspent
+        )
+        mask = sample_weighted_mask(
+            [self._weights[i] for i in unspent], cartridges, rng
+        )
+        for i, loaded in zip(unspent, mask, strict=True):
+            self._outcomes[i] = (
                 ChamberState.LOADED if loaded else ChamberState.EMPTY
             )
 
+    # Снимок
+
+    @property
     def state(self) -> ChamberRowState:
-        """Возвращает неизменяемый снимок текущего состояния ряда."""
-        return ChamberRowState(
-            tuple(self._outcomes),
-            self._weights,
-            len(self.__get_chambers({ChamberState.LOADED})),
-        )
+        """Полный снимок ряда, включая скрытое содержимое камор."""
+        return ChamberRowState(tuple(self._outcomes), self._weights)
