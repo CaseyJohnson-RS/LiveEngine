@@ -19,7 +19,7 @@ addopts = ["--import-mode=importlib"]
 
 [tool.ruff]
 line-length = 80
-target-version = "py314"
+target-version = "py315"
 
 [tool.ruff.lint]
 select = [
