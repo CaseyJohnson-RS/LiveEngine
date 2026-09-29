@@ -19,3 +19,5 @@
 | [0007](0007-sampler-outside-core.md) | Библиотека выборки — вне ядра |
 | [0008](0008-match-not-party.md) | Партия в коде — `Match` |
 | [0009](0009-revealed-positions-in-round.md) | Раскрытые позиции — часть раунда |
+| [0010](0010-semantic-messages.md) | Сообщения смысловые, клиент знает правила |
+| [0011](0011-rules-return-events-and-messages.md) | Правило возвращает и события, и сообщения |
