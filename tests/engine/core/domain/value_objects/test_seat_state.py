@@ -13,7 +13,6 @@ def make_state(**overrides: object) -> SeatState:
         "items": (),
         "effects": (),
         "chips": 1,
-        "known_weight_indexes": frozenset({2}),
     }
     fields.update(overrides)
     return SeatState(**fields)  # type: ignore[arg-type]

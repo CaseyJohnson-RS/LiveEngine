@@ -1,4 +1,4 @@
-from collections.abc import Iterable, Sequence
+from collections.abc import Sequence
 
 from engine.core.domain.enums import Item
 from engine.core.domain.exceptions.seat import (
@@ -11,14 +11,22 @@ from engine.core.domain.value_objects import Effect, SeatState
 class Seat:
     """Место игрока за столом партии — запись его игровых характеристик.
 
-    Мертвое место замораживается. Менять после смерти можно только:
+    Создаётся заново на каждую партию, а не сбрасывается.
 
-    1. Предметы (другие места могут забрать предметы)
-    2. Множество известных индексов позиций (в каждом раунде они должны
-    сбрасываться)
+    Мёртвое место замораживается. Менять после смерти можно только
+    предметы: их могут забрать другие места.
 
     Использующий код должен помнить об этом.
     """
+
+    __slots__ = (
+        "_chips",
+        "_effects",
+        "_health_points",
+        "_items",
+        "_max_health_points",
+        "_max_items",
+    )
 
     def __init__(self, max_items: int, health_points: int) -> None:
         """Создаёт место с полным здоровьем, без фишек и предметов.
@@ -43,7 +51,6 @@ class Seat:
         self._health_points: int = health_points
 
         self._chips: int = 0
-        self._known_weight_indexes: set[int] = set()
 
     def __check_is_alive(self) -> None:
         """Бросает ошибку состояния, если число очков равно нулю."""
@@ -132,23 +139,6 @@ class Seat:
         # - - -
         self._chips = chips
 
-    # Known weight indexes
-
-    @property
-    def known_weight_indexes(self) -> frozenset[int]:
-        """Замороженное множество индексов позиций, веса которых
-        известны месту."""
-        return frozenset(self._known_weight_indexes)
-
-    @known_weight_indexes.setter
-    def known_weight_indexes(self, indexes: Iterable[int]) -> None:
-        values = set(indexes)
-        for idx in values:
-            if idx < 0:
-                raise SeatArgumentError(f"indexes must be >= 0, got {idx}")
-        # - - -
-        self._known_weight_indexes = values
-
     # State
 
     @property
@@ -159,5 +149,4 @@ class Seat:
             chips=self._chips,
             items=tuple(self._items),
             effects=tuple(self._effects),
-            known_weight_indexes=frozenset(self._known_weight_indexes),
         )

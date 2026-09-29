@@ -36,6 +36,8 @@ class ChamberRow:
       как правило, из-за выбора игрока.
     """
 
+    __slots__ = ("_outcomes", "_weights")
+
     def __init__(
         self, weights: Sequence[int], cartridges: int, rng: Random
     ) -> None:

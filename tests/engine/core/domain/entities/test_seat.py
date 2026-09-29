@@ -47,7 +47,6 @@ def test_new_seat_has_full_health_and_nothing_else() -> None:
     assert seat.items == ()
     assert seat.effects == ()
     assert seat.chips == 0
-    assert seat.known_weight_indexes == frozenset()
 
 
 @pytest.mark.parametrize("health_points", [0, -1])
@@ -137,13 +136,6 @@ def test_dead_seat_items_stay_mutable() -> None:
     assert seat.items == ()
 
 
-def test_dead_seat_known_weight_indexes_stay_mutable() -> None:
-    """Сеттер раскрытых позиций не проверяет, жив ли владелец."""
-    seat = dead_seat()
-    seat.known_weight_indexes = {1, 2}
-    assert seat.known_weight_indexes == frozenset({1, 2})
-
-
 # --------------------------------------------------------------------------- #
 # Предметы
 # --------------------------------------------------------------------------- #
@@ -219,40 +211,6 @@ def test_negative_chips_rejected_and_unchanged() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# Раскрытые позиции
-# --------------------------------------------------------------------------- #
-
-
-def test_known_indexes_deduplicated_from_any_iterable() -> None:
-    seat = alive_seat()
-    seat.known_weight_indexes = (i for i in [3, 1, 3, 0])
-    assert seat.known_weight_indexes == frozenset({0, 1, 3})
-
-
-def test_known_indexes_can_be_extended_in_place() -> None:
-    seat = alive_seat()
-    seat.known_weight_indexes = {1}
-    seat.known_weight_indexes |= {2}
-    assert seat.known_weight_indexes == frozenset({1, 2})
-
-
-def test_negative_known_index_rejected_and_unchanged() -> None:
-    seat = alive_seat()
-    seat.known_weight_indexes = {1}
-
-    with pytest.raises(SeatArgumentError):
-        seat.known_weight_indexes = {2, -1}
-    assert seat.known_weight_indexes == frozenset({1})
-
-
-def test_known_indexes_can_be_cleared() -> None:
-    seat = alive_seat()
-    seat.known_weight_indexes = {1, 2}
-    seat.known_weight_indexes = set()
-    assert seat.known_weight_indexes == frozenset()
-
-
-# --------------------------------------------------------------------------- #
 # Снимок
 # --------------------------------------------------------------------------- #
 
@@ -264,14 +222,12 @@ def test_state_reflects_current_values() -> None:
     seat.items = [item]
     seat.effects = [effect]
     seat.chips = 5
-    seat.known_weight_indexes = {4}
 
     assert seat.state == SeatState(
         health_points=2,
         items=(item,),
         effects=(effect,),
         chips=5,
-        known_weight_indexes=frozenset({4}),
     )
 
 
@@ -279,10 +235,23 @@ def test_state_is_detached_from_later_changes() -> None:
     seat = alive_seat()
     snapshot = seat.state
     seat.chips = 7
-    seat.known_weight_indexes = {1}
+    seat.items = [make_item()]
 
     assert snapshot.chips == 0
-    assert snapshot.known_weight_indexes == frozenset()
+    assert snapshot.items == ()
+
+
+# --------------------------------------------------------------------------- #
+# Атрибуты
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.parametrize("name", ["chip", "known_weight_indexes", "hp"])
+def test_unknown_attribute_cannot_be_set(name: str) -> None:
+    """Опечатка в имени атрибута падает сразу, а не создаёт новое поле."""
+    seat = alive_seat()
+    with pytest.raises(AttributeError):
+        setattr(seat, name, 1)
 
 
 # --------------------------------------------------------------------------- #
