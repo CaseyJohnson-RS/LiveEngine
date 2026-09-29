@@ -19,3 +19,16 @@ addopts = ["--import-mode=importlib"]
 
 [tool.ruff]
 line-length = 80
+target-version = "py314"
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle: ошибки стиля, включая длину строки (E501)
+    "W",    # pycodestyle: предупреждения (пробелы в конце строк и т. п.)
+    "F",    # pyflakes: неиспользуемые импорты и переменные, неопределённые имена
+    "I",    # isort: порядок импортов
+    "B",    # flake8-bugbear: типичные баги (изменяемые аргументы по умолчанию…)
+    "UP",   # pyupgrade: современный синтаксис
+    "SIM",  # flake8-simplify: упрощение условий и выражений
+    "PYI",  # flake8-pyi: у вас в коде уже был noqa на него
+]

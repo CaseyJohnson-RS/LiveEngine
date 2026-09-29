@@ -37,7 +37,8 @@ def extreme_patterns(n: int, heavy: float) -> dict[str, list[float]]:
 
 
 def degenerate_odds(weights: list[float]) -> list[tuple[int, int, int]]:
-    """Все `(degree, i, rest)`, где предусловия `odds` выполнены, а num или den == 0."""
+    """Все `(degree, i, rest)`, где предусловия `odds` выполнены, а num или
+    den == 0."""
     n = len(weights)
     bad: list[tuple[int, int, int]] = []
     for degree in range(1, n):
@@ -64,7 +65,8 @@ def test_odds_never_degenerate_at_limits(weights: list[float]) -> None:
 
 
 def test_guard_detects_limits_violation() -> None:
-    """Контроль самого теста: за пределами связи вырождение действительно ловится.
+    """Контроль самого теста: за пределами связи вырождение действительно
+    ловится.
 
     60 позиций с весами 1e6 дают разброс ~1e360 — заведомо больше double.
     Вырождаются не все наборы (сейчас — однородные all-heavy/all-light),

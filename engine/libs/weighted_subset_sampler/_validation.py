@@ -29,7 +29,8 @@ def validated_weights(weights: Sequence[float]) -> list[float]:
         # для которого любое сравнение ложно, тоже вылетит.
         if not (1 / MAX_WEIGHT <= value <= MAX_WEIGHT):
             raise SamplingWeightError(
-                f"weight at {i} must be in [{1 / MAX_WEIGHT}; {MAX_WEIGHT}], got {w!r}"
+                f"weight at {i} must be in "
+                f"[{1 / MAX_WEIGHT}; {MAX_WEIGHT}], got {w!r}"
             )
         checked.append(value)
 

@@ -14,7 +14,8 @@ class Seat:
     Мертвое место замораживается. Менять после смерти можно только:
 
     1. Предметы (другие места могут забрать предметы)
-    2. Множество известных индексов позиций (в каждом раунде они должны сбрасываться)
+    2. Множество известных индексов позиций (в каждом раунде они должны
+    сбрасываться)
 
     Использующий код должен помнить об этом.
     """
@@ -70,7 +71,8 @@ class Seat:
         self.__check_is_alive()
         if not (0 <= value <= self._max_health_points):
             raise SeatArgumentError(
-                f"health_points must be in range [0; {self._max_health_points}], got {value}"
+                f"health_points must be in range "
+                f"[0; {self._max_health_points}], got {value}"
             )
         # - - -
         self._health_points = value
@@ -89,7 +91,8 @@ class Seat:
     def items(self, items: Sequence[Item]) -> None:
         if len(items) > self._max_items:
             raise SeatArgumentError(
-                f"Seat can't have more than {self._max_items} items! Got {len(items)}"
+                f"Seat can't have more than {self._max_items} items! "
+                f"Got {len(items)}"
             )
         # - - -
         self._items = list(items)
@@ -133,7 +136,8 @@ class Seat:
 
     @property
     def known_weight_indexes(self) -> frozenset[int]:
-        """Замороженное множество индексов позиций, веса которых известны месту."""
+        """Замороженное множество индексов позиций, веса которых
+        известны месту."""
         return frozenset(self._known_weight_indexes)
 
     @known_weight_indexes.setter
